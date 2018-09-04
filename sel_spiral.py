@@ -30,14 +30,22 @@ dapdir='/DATA_MANGA/newton/mpl7/dap/HYB10-GAU-MILESHC/'
 
 outdir='veldata/'
 j=0
+
+outpar=open('spiral_RC.par','w')
+outpar.write('#MaNGAID,ellp,Phi\n')
 for i,MID in enumerate(UID):
-      Isel=sel[0][i]
+      
+      sel=np.where(UID[i] == MANGAID)
+      Isel=sel[0][0]
+         
       mapfilename='manga-'+str(Plate[Isel])+'-'+str(IFUDESIGN[Isel])+'-MAPS-HYB10-GAU-MILESHC.fits.gz'
       #cubefilename='manga-'+str(Plate[Isel])+'-'+str(IFUDESIGN[Isel])+'-LOGCUBE-HYB10-GAU-MILESHC.fits.gz'
       mapfile=dapdir+str(Plate[Isel])+'/'+str(IFUDESIGN[Isel])+'/'+mapfilename
       #cubefile=dapdir+str(Plate[Isel])+'/'+str(IFUDESIGN[Isel])+'/'+cubefilename
       if not os.path.isfile(mapfile):
             continue
+      
+      outpar.write('%8s,%4.2f,%6.2f\n' %(UID[i],1-btoa[Isel],Phi[Isel]))
       
       maps=fits.open(mapfile)
       #cube=fits.open(cubefile)
@@ -48,20 +56,31 @@ for i,MID in enumerate(UID):
       #sigma_Ivar=maps[18].data
       #sigma_corr=maps[19].data
       EmV=maps[36].data
-      EmV_Ivar=maps[37].data
+      EmV_Ivar=maps[37].data[0,:,:]
 
       hdu1 = fits.PrimaryHDU(EmV[0,:,:])
-      hdu2 = fits.PrimaryHDU(EmV_Ivar[0,:,:])
+      sel=np.where(EmV_Ivar ==0)
+      EmV_Ivar[sel]=1.e-6
+      EmV_err=1/np.sqrt(EmV_Ivar)
+      hdu2 = fits.PrimaryHDU(EmV_err)
       hdu3 = fits.PrimaryHDU(StellarV)
-      hdu4 = fits.PrimaryHDU(StellarV_Ivar)
+      sel=np.where(StellarV_Ivar == 0)
+      StellarV_Ivar[sel]=1.e-6
+      StellarV_err=1./np.sqrt(StellarV_Ivar)
 
-      hdu1.writeto(outdir+'EmV'+MANGAID[Isel]+'.fits',overwrite=True)
-      hdu2.writeto(outdir+'EmVerr'+MANGAID[Isel]+'.fits',overwrite=True)
-      hdu3.writeto(outdir+'StV'+MANGAID[Isel]+'.fits',overwrite=True)
-      hdu4.writeto(outdir+'StVerr'+MANGAID[Isel]+'.fits',overwrite=True)
+      #sel=where()
+      
+      hdu4 = fits.PrimaryHDU(StellarV_err)
+
+      #hdu1.writeto(outdir+'EmV'+MANGAID[Isel]+'.fits',overwrite=True)
+      #hdu2.writeto(outdir+'EmVerr'+MANGAID[Isel]+'.fits',overwrite=True)
+      #hdu3.writeto(outdir+'StV'+MANGAID[Isel]+'.fits',overwrite=True)
+      #hdu4.writeto(outdir+'StVerr'+MANGAID[Isel]+'.fits',overwrite=True)
+      
       j=j+1
       
 print(j,'galaxies velocity maps read')
+outpar.close()
 
 
 
